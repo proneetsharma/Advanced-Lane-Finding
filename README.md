@@ -448,7 +448,7 @@ plt.imshow(final)
 
 ## Pipeline for video
 
-In this pipeline all the above defined function are called in a sindle function whose result will be applied on the video(series of images).
+In this pipeline all the above defined function are called in a single function whose result will be applied on the video(series of images).
 
 ```py
 def process_image(img):
@@ -479,3 +479,7 @@ clip1 = VideoFileClip("challenge_video.mp4")
 white_clip = clip1.fl_image(process_image)
 %time white_clip.write_videofile(project_video_output, audio=False)
 ```
+Output video will look like this- 
+<br />
+![Alt Text](https://media.giphy.com/media/4Zo41Z9WmTenDbsVzM/giphy.gif)
+
