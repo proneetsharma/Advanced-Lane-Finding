@@ -140,8 +140,8 @@ plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
 ```
 
 Initially the image is converted from RGB color space to HLS color space using `cv2.cvtColor()` function. Then the `cv2.Sobel()` is used to take the derivative of l_channel image in x direction(the 1, 0 at the end denotes x direction). The absolute value of sobel is converted to 8-bit because it is useful when we have to apply a particular threshold, and we want it to work the same on input images of different scales, like jpg vs. png.
-Here in the `thresholded_binary_image()` we have defined 2 more parameters s_thresh and sx_thresh. **sx_thresh** values are used for gradient thresholding whereas **s_thresh** valuse are used for color thresholding. To get the binary of each, pixels which are in range is assigned to 1 otherwise they will remain 0.
-To get the color_binary `np.zeros_like(sxbinary)`, `sxbinary` and `s_binary` are stacked together. And to get the combined binary(s_channel and gradient threshold), pixels where any of `s_binary` or `sxbinary` is equal to 1 is assign to 1 and remaining pixels will remain black.
+Here in the `thresholded_binary_image()` we have defined 2 more parameters s_thresh and sx_thresh. **sx_thresh** values are used for gradient thresholding whereas **s_thresh** valuse are used for color thresholding. To get the binary of each color and gradient, pixels which are in range is assigned to 1 and other they will remain 0.
+To get the color_binary `np.zeros_like(sxbinary)`, `sxbinary` and `s_binary` are stacked together. And to get the combined binary(s_channel and gradient threshold), pixels where any of `s_binary` or `sxbinary` is equal to 1 is assign to 1 and remaining pixels will remain 0.
 
 <img src="output_images/combined_binary.png" width="860" alt="" />
 
