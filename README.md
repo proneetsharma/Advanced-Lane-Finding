@@ -479,7 +479,8 @@ clip1 = VideoFileClip("challenge_video.mp4")
 white_clip = clip1.fl_image(process_image)
 %time white_clip.write_videofile(project_video_output, audio=False)
 ```
-Output video will look like this- 
+
+The output video will saved in the project directory with name ***project_output_video*** and will look like this- 
 <br />
 ![Alt Text](https://media.giphy.com/media/4Zo41Z9WmTenDbsVzM/giphy.gif)
 
