@@ -51,10 +51,6 @@ def camera_calibration():
   
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
     return mtx, dist
-
-mtx, dist = camera_calibration()
-print ('mtx: ', mtx)
-print ('dist: ', dist)
 ```
 
 Initially the object points `(objp)` is prepared in 3D space(x,y,z). After then a grid is created using opencv function `np.mgrid[0:9,0:6]` which returns the coordinate value for a given grid size. The .T transposes the matrix, and the .reshape(-1,2) then reshapes it into a two-column array shape. With the help of `glob` API we are reading all the calibration images with consistant file name. To find the corners, each image file is iterated and with the help of `cv2.findChessboardCorners` function corners are detected on a grayscaled image. If the cornes are detected then we appended points to the object and image points array. Later these object and image points are used to caliberate the camera with the help of `cv2.calibrateCamera` function, which returns the **camera matrix** and **distortion coefficient**
@@ -65,17 +61,6 @@ def cal_undistort(img, mtx, dist):
 #     Undistort the image
     undist = cv2.undistort(img, mtx, dist, None, mtx)
     return undist
-
-img = cv2.imread('camera_cal/calibration5.jpg')
-undistorted = cal_undistort(img, mtx, dist)
-
-f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))
-f.tight_layout()
-ax1.imshow(img)
-ax1.set_title('Original Image', fontsize=50)
-ax2.imshow(undistorted)
-ax2.set_title('Undistorted Image', fontsize=50)
-plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
 ```
 This function uses the `cv2.undistort()` function and returns the undistorted image.
 <br />
@@ -89,7 +74,7 @@ The pipeline of image consists of 6 steps.
 This function combines the color tranform and gradient thresholding to get the best of both worlds.
 The main aim of this function is to generate a binary image of an undistorted image.
 ```py
-def thresholded_binary_image(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
+def thresholded_binary_image(img, s_thresh=(170, 255), sx_thresh=(10, 100)):
 
 #     Convert to HLS color space
     hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
@@ -119,27 +104,9 @@ def thresholded_binary_image(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
     
     return color_binary, combined_binary
-
-img = mpimg.imread('test_images/test5.jpg')
-undistorted = cal_undistort(img, mtx, dist)
-color_binary, combined_binary = thresholded_binary_image(undistorted)
-
-# Plot the result
-f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 9))
-f.tight_layout()
-
-ax1.imshow(img)
-ax1.set_title('Original Image', fontsize=20)
-
-ax2.imshow(color_binary)
-ax2.set_title('Stacked thresholds', fontsize=20)
-
-ax3.imshow(combined_binary, cmap='gray')
-ax3.set_title('Combined S channel and gradient thresholds', fontsize=20)
-plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
 ```
 
-Initially the image is converted from RGB color space to HLS color space using `cv2.cvtColor()` function. Then the `cv2.Sobel()` is used to take the derivative of l_channel image in x direction(the 1, 0 at the end denotes x direction). The absolute value of sobel is converted to 8-bit because it is useful when we have to apply a particular threshold, and we want it to work the same on input images of different scales, like jpg vs. png.
+Initially the image is converted from RGB color space to HLS color space using `cv2.cvtColor()` function. Then the `cv2.Sobel()` is used to take the derivative of l_channel image in x direction(the 1, 0 at the endenotes x direction). The absolute value of sobel is converted to 8-bit because it is useful when we have to apply a particular threshold, and we want it to work the same on input images of different scales, like jpg vs. png.
 Here in the `thresholded_binary_image()` we have defined 2 more parameters s_thresh and sx_thresh. **sx_thresh** values are used for gradient thresholding whereas **s_thresh** valuse are used for color thresholding. To get the binary of each color and gradient, pixels which are in range is assigned to 1 and other they will remain 0.
 To get the color_binary `np.zeros_like(sxbinary)`, `sxbinary` and `s_binary` are stacked together. And to get the combined binary(s_channel and gradient threshold), pixels where any of `s_binary` or `sxbinary` is equal to 1 is assign to 1 and remaining pixels will remain 0.
 
@@ -171,16 +138,6 @@ def perspective_transform(img):
     warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_LINEAR)
     
     return M, Minv, warped
-
-M, Minv, binary_warped = perspective_transform(combined_binary)
-
-f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))
-f.tight_layout()
-ax1.imshow(combined_binary, cmap='gray')
-ax1.set_title('Combined Image', fontsize=50)
-ax2.imshow(binary_warped, cmap='gray')
-ax2.set_title('Warped Image', fontsize=50)
-plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
 ```  
 Here we have defined the src(source) and dst(destintion) point of the image. Which is used by the `cv2.getPerspectiveTransform()` function to calculate the perspective and inverse perspective transform. Then `cv2.warpPerspective()` function is used to warp the image to the desired perspective.
 
@@ -215,7 +172,7 @@ The main aim of this function is to find the lanes in a binary_warped image. Ini
 The approach of sliding windows to track the lane lines out into the distance is great but it is very inefficient to use the full algorithm from before and starting fresh on every frame of the image in the video. Instead of doing so we we have used the approach to search in a margin around the previous line position. So here we have used the result of previous approach and generated a polygon to illustrate the search window area. After then used the ` cv2.fillPoly()` function to draw the lane onto to out_image.
 
 ```py
-def find_lane_pixels(binary_warped):
+def find_lane_pixels(binary_warped, view):
     histogram = np.sum(binary_warped[binary_warped.shape[0]//2:,:], axis=0)
 #     Create an output image to draw on and visualize the result
     out_img = np.dstack((binary_warped, binary_warped, binary_warped))
@@ -316,6 +273,7 @@ def find_lane_pixels(binary_warped):
     out_img[righty, rightx] = [0, 0, 255]
     
 #     View your output
+    if (view == True):
     f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))
     f.tight_layout()
     ax1.set_title('Sliding Window', fontsize=50)
@@ -347,17 +305,14 @@ def find_lane_pixels(binary_warped):
     cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
     result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
     
-#         View your output
+#   View your output
+    if (view == True):
     ax2.set_title('Search from prior', fontsize=50)
     ax2.imshow(result)
     ax2.plot(right_fitx, ploty, color='yellow')
     ax2.plot(left_fitx, ploty, color='yellow')
     
     return result, out_img, ploty, left_fit, right_fit, left_fitx, right_fitx
-
-# Run image through the pipeline
-# Note that in your project, you'll also want to feed in the previous fits
-result, out_img, ploty, left_fit, right_fit, left_fitx, right_fitx = find_lane_pixels(binary_warped)
 ```
 <img src="output_images/lane_pixels.png" width="560" alt="" />
 
@@ -366,7 +321,7 @@ Using equation of radius of curvature to calculate the curve radius of left and 
 
 <img src="output_images/ROC.png" width="260" alt="" />
 
-To calculate the offset position of the car we have first calculated the difference of centre of image to the centre of the lane. The difference is then multiplied by xm_per pix(converted from pixels to meters). The result will give the position of vehicle from the centre.
+It is assumed that the camera is mounted at the center of the car, such that the lane center is the midpoint at the bottom of the image between the two detected lines. Therefore to calculate the offset position of the car we have first calculated the difference of centre of image to the centre of the lane. The difference is then multiplied by xm_per pix(converted from pixels to meters). The result will give the position of vehicle from the centre.
 
 ```py
 def measure_curvature_real(left_fit, right_fit, left_fitx, right_fitx, ploty):
@@ -397,14 +352,6 @@ def measure_curvature_real(left_fit, right_fit, left_fitx, right_fitx, ploty):
     car_position = ((img.shape[1]/2)-((leftx_lane+rightx_lane)/2))*xm_per_pix
     
     return left_curve_radius, right_curve_radius, car_position
-
-
-# Calculate the radius of curvature in meters for both lane lines
-left_curve_radius, right_curve_radius, car_position = measure_curvature_real(left_fit, right_fit, left_fitx, right_fitx, ploty)
-
-print(left_curve_radius, 'm', right_curve_radius, 'm')
-print ('Position: ', car_position)
-# the default `generate_data` function with given seed number
 ```
 ### Step.6 Final Display
 
@@ -438,7 +385,6 @@ def final_display(ploty, left_fitx, right_fitx, binary_warped, undistorted, left
     cv2.putText(final, text, (50,100), font, 1, (255,255,255), 2)
     text = "Vehicle is {:.2f} m Right from center".format(car_position)
     cv2.putText(final, text, (50,150), font, 1, (255,255,255), 2)
-
     
     return final 
 final = final_display(ploty, left_fitx, right_fitx, binary_warped, undistorted, left_curve_radius, right_curve_radius, car_position)
@@ -464,7 +410,7 @@ def process_image(img):
     M, Minv, binary_warped = perspective_transform(combined_binary)
     
     # find lane pixels
-    result, out_img, ploty, left_fit, right_fit, left_fitx, right_fitx = find_lane_pixels(binary_warped)
+    result, out_img, ploty, left_fit, right_fit, left_fitx, right_fitx = find_lane_pixels(binary_warped, False)
 
     # Calculate Curve radius
     left_curve_radius, right_curve_radius, car_position = measure_curvature_real(left_fit, right_fit, left_fitx, right_fitx, ploty)
@@ -484,3 +430,14 @@ The output video will get saved in the project directory with name ***project_ou
 <br />
 ![Alt Text](https://media.giphy.com/media/4Zo41Z9WmTenDbsVzM/giphy.gif)
 
+## Discussion
+
+### Problems/issues faced
+
+* It takes lot of time to check the result on different parameters, specially in case of video.
+* Earlier in case of shadow the output was not desirable but later it was improved.  
+
+### Improvements
+
+* The output results can be improved by more fine tuning of color and gradient parameters.
+* Choosing better `src` and `dst` (region masking) could leads to a better result.
