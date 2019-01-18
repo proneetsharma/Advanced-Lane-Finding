@@ -1,6 +1,5 @@
 # Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
-![Lanes Image](./examples/example_output.jpg)
+![Alt Text](https://media.giphy.com/media/4Zo41Z9WmTenDbsVzM/giphy.gif)
 
 In this project, the goal is to write a software pipeline to identify the lane boundaries in an image and then in a video.
 
@@ -426,18 +425,4 @@ white_clip = clip1.fl_image(process_image)
 %time white_clip.write_videofile(project_video_output, audio=False)
 ```
 
-The output video will get saved in the project directory with name ***project_output_video*** and will look like this- 
-<br />
-![Alt Text](https://media.giphy.com/media/4Zo41Z9WmTenDbsVzM/giphy.gif)
-
-## Discussion
-
-### Problems/issues faced
-
-* It takes lot of time to check the result on different parameters, specially in case of video.
-* Earlier in case of shadow the output was not desirable but later it was improved.  
-
-### Improvements
-
-* The output results can be improved by more fine tuning of color and gradient parameters.
-* Choosing better `src` and `dst` (region masking) could leads to a better result.
+The output video will get saved in the project directory with name ***project_output_video.***
